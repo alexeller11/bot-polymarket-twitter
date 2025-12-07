@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/bot-polymarket:$COMMIT_SHA', '-t', 'gcr.io/$PROJECT_ID/bot-polymarket:latest', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/bot-polymarket']
+  - name: 'gcr.io/cloud-builders/run'
+    args: ['deploy', 'bot-polymarket', '--image=gcr.io/$PROJECT_ID/bot-polymarket:latest', '--region=us-west1', '--allow-unauthenticated']
+
+images:
+  - 'gcr.io/$PROJECT_ID/bot-polymarket:latest'
+  - 'gcr.io/$PROJECT_ID/bot-polymarket:$COMMIT_SHA'
