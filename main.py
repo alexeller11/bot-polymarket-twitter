@@ -14,21 +14,21 @@ TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
 app = Flask(__name__)
 
-# Modelos de tweets humanizados
+# Modelos de tweets humanizados COM @Polymarket
 TWEET_TEMPLATES = {
     "sports": [
-        "🏆 {market} em ALTA! {odds}% de chance. Mercado aquecido! Você tá dentro? #Polymarket #Sports",
-        "⚡ OPORTUNIDADE! {market} agora com {odds}% de probabilidade. Vale a pena tomar? 👀 #Crypto #Betting",
-        "📈 {market} + {odds}% odds = receita certa? Vem com a gente! #PolymarketBR #Sports",
-        "🚀 {market} EXPLOSÃO! {odds}% de chance. Esse é o momento! 💰 #Arbitrage #Odds",
-        "💎 Mercado {market} em FOGO! {odds}% odds | Quem aproveita o pump? #Polymarket #Sports",
+        "🏆 {market} em ALTA! {odds}% de chance. Mercado aquecido! Você tá dentro? @Polymarket #Polymarket #Sports",
+        "⚡ OPORTUNIDADE! {market} agora com {odds}% de probabilidade. Vale a pena tomar? 👀 @Polymarket #Crypto #Betting",
+        "📈 {market} + {odds}% odds = receita certa? Vem com a gente! @Polymarket #PolymarketBR #Sports",
+        "🚀 {market} EXPLOSÃO! {odds}% de chance. Esse é o momento! 💰 @Polymarket #Arbitrage #Odds",
+        "💎 Mercado {market} em FOGO! {odds}% odds | Quem aproveita o pump? @Polymarket #Polymarket #Sports",
     ],
     "crypto": [
-        "🪙 {market} BOMBA! {odds}% de chance. O mercado sabe de algo? 🤔 #Web3 #Crypto",
-        "⛓️ {market} + {odds}% odds = ouro puro! Vale entrar agora? #Polymarket #DeFi",
-        "🔥 ALERT! {market} em alta com {odds}% de probabilidade. Não perca! 💪 #Crypto #Arbitrage",
-        "🌙 {market} {odds}% | Mercado prevê X? Vem debater! 🧵 #Web3 #Polymarket",
-        "💰 {market} com {odds}% de chance - Melhor oportunidade do dia! #Crypto #Sports",
+        "🪙 {market} BOMBA! {odds}% de chance. O mercado sabe de algo? 🤔 @Polymarket #Web3 #Crypto",
+        "⛓️ {market} + {odds}% odds = ouro puro! Vale entrar agora? @Polymarket #Polymarket #DeFi",
+        "🔥 ALERT! {market} em alta com {odds}% de probabilidade. Não perca! 💪 @Polymarket #Crypto #Arbitrage",
+        "🌙 {market} {odds}% | Mercado prevê X? Vem debater! 🧵 @Polymarket #Web3 #Polymarket",
+        "💰 {market} com {odds}% de chance - Melhor oportunidade do dia! @Polymarket #Crypto #Sports",
     ]
 }
 
@@ -43,10 +43,10 @@ def fetch_polymarket_data():
         response.raise_for_status()
         markets = response.json()
         
-        # Filtro: apenas mercados com volume alto (liquidez > 1000 USDC)
+        # Filtro: apenas mercados com volume alto (liquidez > 500 USDC)
         filtered = [
             m for m in markets 
-            if m.get("volume24h", 0) > 1000 or m.get("liquidityScore", 0) > 50
+            if m.get("volume24h", 0) > 500 or m.get("liquidityScore", 0) > 30
         ]
         
         # Prioriza esportes e crypto
@@ -83,10 +83,13 @@ def detect_arbitrage(market):
         return {"detected": False, "difference": 0, "recommendation": "NORMAL"}
 
 def generate_humanized_tweet(market):
-    """Cria tweets humanizados e emocionais"""
+    """Cria tweets humanizados e emocionais COM @Polymarket"""
     try:
-        market_title = market.get("question", "Mercado")[:50]
-        yes_odds = float(market.get("bestBidYes", 0.5)) * 100
+        market_title = market.get("question", "Mercado")[:35]
+        try:
+            yes_odds = float(market.get("bestBidYes", 0.5)) * 100
+        except:
+            yes_odds = 50.0
         
         # Detecta arbitrage
         arb = detect_arbitrage(market)
@@ -98,13 +101,15 @@ def generate_humanized_tweet(market):
         
         # Cria tweet com emoji e dados
         tweet_text = template.format(
-            market=market_title[:40],
+            market=market_title[:30],
             odds=f"{yes_odds:.0f}"
         )
         
         # Adiciona alerta de arbitragem se detectado
         if arb["detected"]:
-            tweet_text += f"\n\n⚠️ ARBITRAGEM DETECTADA: {arb['difference']:.1f}% diferença!\n{arb['recommendation']} 🎯"
+            arb_text = f"\n\n⚠️ ARBITRAGEM: {arb['difference']:.1f}% diferença! {arb['recommendation']} 🎯"
+            if len(tweet_text) + len(arb_text) <= 270:
+                tweet_text += arb_text
         
         # Certifica que cabe nos 280 caracteres do Twitter
         if len(tweet_text) > 270:
@@ -116,20 +121,21 @@ def generate_humanized_tweet(market):
         return None
 
 def post_tweet_to_twitter(tweet_text):
-    """Posta o tweet no Twitter"""
+    """Posta o tweet no Twitter com retry"""
     try:
         if not tweet_text:
             logger.warning("Tweet vazio, ignorando")
             return False
         
+        logger.info(f"Postando tweet: {tweet_text[:100]}...")
         response = twitter_client.create_tweet(text=tweet_text)
-        logger.info(f"Tweet postado com sucesso! ID: {response.data['id']}")
+        logger.info(f"✅ Tweet postado com sucesso! ID: {response.data['id']}")
         return True
     except TweepError as e:
-        logger.error(f"Erro ao postar no Twitter: {e}")
+        logger.error(f"Erro Tweepy ao postar no Twitter: {str(e)}")
         return False
     except Exception as e:
-        logger.error(f"Erro inesperado: {e}")
+        logger.error(f"Erro inesperado: {str(e)}")
         return False
 
 @app.route("/postar-tweet", methods=["POST"])
@@ -147,25 +153,31 @@ def postar_tweet():
         
         # Seleciona mercado aleatório
         market = random.choice(markets)
+        logger.info(f"Mercado selecionado: {market.get('question', 'N/A')[:50]}")
         
         # Gera tweet humanizado
         tweet = generate_humanized_tweet(market)
+        
+        if not tweet:
+            logger.error("Falha ao gerar tweet")
+            return {"status": "erro", "mensagem": "Falha ao gerar tweet"}, 500
         
         # Posta no Twitter
         if post_tweet_to_twitter(tweet):
             logger.info("✅ Bot executado com sucesso!")
             return {
                 "status": "sucesso",
-                "mensagem": "Tweet postado!",
+                "mensagem": "Tweet postado com sucesso!",
                 "tweet": tweet,
                 "mercado": market.get("question", "N/A"),
                 "timestamp": datetime.now().isoformat()
             }, 200
         else:
-            return {"status": "erro", "mensagem": "Falha ao postar tweet"}, 500
+            logger.error("Falha ao postar tweet")
+            return {"status": "erro", "mensagem": "Falha ao postar tweet no Twitter"}, 500
             
     except Exception as e:
-        logger.error(f"Erro no endpoint: {e}")
+        logger.error(f"Erro no endpoint: {str(e)}")
         return {"status": "erro", "mensagem": str(e)}, 500
 
 @app.route("/health", methods=["GET"])
