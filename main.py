@@ -1,10 +1,11 @@
 import os
 import random
 from datetime import datetime
-from flask import Flask
+from fastapi import FastAPI
 from tweepy import Client, TweepError
 
-app = Flask(__name__)
+app = FastAPI()
+
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
 
@@ -22,7 +23,11 @@ TWEETS = [
     "💰 Crypto rally incoming? Mercado aposta YES @Polymarket #Polymarket #Bitcoin",
 ]
 
-@app.route("/postar-tweet", methods=["POST"])
+@app.get("/")
+def read_root():
+    return {"message": "Hello world! From FastAPI running on Unicorn with Gunicorn. Using Python 3.11"}
+
+@app.post("/postar-tweet")
 def postar_tweet():
     try:
         # Pega tweet aleatório
@@ -36,16 +41,23 @@ def postar_tweet():
             "mensagem": "Tweet postado com sucesso!",
             "tweet": tweet,
             "timestamp": datetime.now().isoformat()
-        }, 200
+        }
     except TweepError as e:
-        return {"status": "erro", "mensagem": f"Erro Twitter: {str(e)}"}, 500
+        return {
+            "status": "erro",
+            "mensagem": f"Erro Twitter: {str(e)}"
+        }
     except Exception as e:
-        return {"status": "erro", "mensagem": str(e)}, 500
+        return {
+            "status": "erro",
+            "mensagem": str(e)
+        }
 
-@app.route("/health", methods=["GET"])
+@app.get("/health")
 def health():
-    return {"status": "ok"}, 200
+    return {"status": "ok"}
 
 if __name__ == "__main__":
+    import uvicorn
     port = int(os.getenv("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    uvicorn.run(app, host="0.0.0.0", port=port)
