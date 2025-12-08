@@ -1,15 +1,28 @@
 import os
 import random
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from tweepy import Client, TweepError
+import firebase_admin
+from firebase_admin import credentials, db
+
+# Inicializar Firebase
+try:
+    firebase_admin.get_app()
+except ValueError:
+    # Se não existe app Firebase, usar variável de ambiente
+    db_url = os.getenv("FIREBASE_DB_URL")
+    if db_url:
+        cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_JSON"))
+        firebase_admin.initialize_app(cred, {'databaseURL': db_url})
 
 app = FastAPI()
 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
 
-# Tweets com ALTO ENGAJAMENTO - Humanizados, com tendências do dia, focados em Polymarket
+# Tweets com ALTO ENGAJAMENTO
 TWEETS = [
     "🚨 VAI ROLAR HOJE: Liverpool vs Real Madrid é TRETA na Polymarket. Pessoal tá apostando pesado em um gol antes dos 30min. Vocês acreditam? @Polymarket #UCL",
     "💰 PAUSA! Bitcoin tá fazendo aquele movimento CLÁSSICO de consolidação... Quem tá olhando as odds na Polymarket sabe que a próxima perna VEM BOMBADA. @Polymarket #BTC",
@@ -28,17 +41,154 @@ TWEETS = [
     "⚙️ DeFi MOMENTO: Smart contracts RODANDO 24/7. TVL em crescimento EXPONENCIAL. Polymarket tá pronto pra próxima EXPLOSÃO? @Polymarket #DeFi"
 ]
 
+def get_bot_status():
+    """Pega status do bot (ativo/inativo) do Firestore"""
+    try:
+        ref = db.reference('bot_polymarket')
+        data = ref.get()
+        if data and 'ativo' in data:
+            return data['ativo']
+        return True  # padrão é ativo
+    except:
+        return True  # se não conseguir acessar, retorna ativo
+
+def set_bot_status(status):
+    """Define status do bot no Firestore"""
+    try:
+        ref = db.reference('bot_polymarket')
+        ref.update({'ativo': status, 'ultima_alteracao': datetime.now().isoformat()})
+        return True
+    except:
+        return False
+
 @app.get("/")
 def read_root():
-    return {"message": "Hello world! From FastAPI running on Unicorn with Gunicorn. Using Python 3.11"}
+    return {"message": "Bot Polymarket - Control Center"}
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """Dashboard com botões Play/Stop"""
+    status = get_bot_status()
+    status_text = "🟢 ATIVO" if status else "🔴 INATIVO"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bot Polymarket - Control Center</title>
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }}
+            .container {{ background: white; border-radius: 15px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px; width: 100%; }}
+            h1 {{ color: #333; text-align: center; margin: 0 0 10px 0; }}
+            .status {{ text-align: center; font-size: 24px; margin: 20px 0; font-weight: bold; }}
+            .controls {{ display: flex; gap: 15px; margin: 30px 0; justify-content: center; }}
+            button {{ padding: 15px 40px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s; }}
+            .play-btn {{ background: #10b981; color: white; }}
+            .play-btn:hover {{ background: #059669; transform: scale(1.05); }}
+            .stop-btn {{ background: #ef4444; color: white; }}
+            .stop-btn:hover {{ background: #dc2626; transform: scale(1.05); }}
+            .info {{ background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+            .info h3 {{ margin: 0 0 10px 0; color: #1e40af; }}
+            .info p {{ margin: 5px 0; color: #475569; }}
+            .last-update {{ text-align: center; color: #999; font-size: 12px; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 Bot Polymarket</h1>
+            <div class="status">{status_text}</div>
+            
+            <div class="controls">
+                <button class="play-btn" onclick="ativarBot()">▶ PLAY</button>
+                <button class="stop-btn" onclick="desativarBot()">⏹ STOP</button>
+            </div>
+            
+            <div class="info">
+                <h3>💡 Como Funciona?</h3>
+                <p><strong>PLAY:</strong> Ativa o bot para começar a postar tweets automaticamente</p>
+                <p><strong>STOP:</strong> Pausa o bot, impedindo novos tweets</p>
+                <p><strong>Status:</strong> {status_text}</p>
+            </div>
+            
+            <div class="info">
+                <h3>📊 Próximos Passos</h3>
+                <p>Configure o Cloud Scheduler para automatizar postagens em horários específicos</p>
+                <p>URL da API: <code>/postar-tweet</code></p>
+            </div>
+            
+            <div class="last-update" id="lastupdate">Carregando...</div>
+        </div>
+
+        <script>
+            function ativarBot() {{
+                fetch('/ativar', {{ method: 'POST' }})
+                    .then(r => r.json())
+                    .then(d => {{ alert('✅ ' + d.mensagem); location.reload(); }})
+                    .catch(e => alert('❌ Erro: ' + e));
+            }}
+            
+            function desativarBot() {{
+                if(confirm('Tem certeza que deseja parar o bot?')) {{
+                    fetch('/desativar', {{ method: 'POST' }})
+                        .then(r => r.json())
+                        .then(d => {{ alert('✅ ' + d.mensagem); location.reload(); }})
+                        .catch(e => alert('❌ Erro: ' + e));
+                }}
+            }}
+            
+            function atualizarStatus() {{
+                fetch('/status')
+                    .then(r => r.json())
+                    .then(d => {{
+                        document.querySelector('.status').innerText = d.status ? '🟢 ATIVO' : '🔴 INATIVO';
+                    }});
+            }}
+            
+            setInterval(atualizarStatus, 5000);
+        </script>
+    </body>
+    </html>
+    """
+    return html
+
+@app.post("/ativar")
+def ativar():
+    """Ativa o bot"""
+    if set_bot_status(True):
+        return {"status": "sucesso", "mensagem": "Bot ativado! 🟢"}
+    return {"status": "erro", "mensagem": "Erro ao ativar bot"}
+
+@app.post("/desativar")
+def desativar():
+    """Desativa o bot"""
+    if set_bot_status(False):
+        return {"status": "sucesso", "mensagem": "Bot desativado! 🔴"}
+    return {"status": "erro", "mensagem": "Erro ao desativar bot"}
+
+@app.get("/status")
+def status():
+    """Retorna o status do bot"""
+    ativo = get_bot_status()
+    return {
+        "ativo": ativo,
+        "status": "🟢 ATIVO" if ativo else "🔴 INATIVO",
+        "timestamp": datetime.now().isoformat()
+    }
 
 @app.post("/postar-tweet")
 def postar_tweet():
+    """Posta um tweet se o bot está ativo"""
+    # Verifica se bot está ativo
+    if not get_bot_status():
+        return {
+            "status": "parado",
+            "mensagem": "Bot está inativo. Ative o bot antes de postar!"
+        }
+    
     try:
-        # Pega tweet aleatório
         tweet = random.choice(TWEETS)
-        
-        # Posta no Twitter
         response = twitter_client.create_tweet(text=tweet)
         
         return {
@@ -48,19 +198,13 @@ def postar_tweet():
             "timestamp": datetime.now().isoformat()
         }
     except TweepError as e:
-        return {
-            "status": "erro",
-            "mensagem": f"Erro Twitter: {str(e)}"
-        }
+        return {"status": "erro", "mensagem": f"Erro Twitter: {str(e)}"}
     except Exception as e:
-        return {
-            "status": "erro",
-            "mensagem": str(e)
-        }
+        return {"status": "erro", "mensagem": str(e)}
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "bot_ativo": get_bot_status()}
 
 if __name__ == "__main__":
     import uvicorn
