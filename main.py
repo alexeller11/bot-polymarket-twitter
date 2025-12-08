@@ -9,20 +9,23 @@ app = FastAPI()
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
 
-# Tweets prontos para postar - APENAS ESPORTES E CRIPTOMOEDAS - OPORTUNIDADES
+# Tweets com ALTO ENGAJAMENTO - Humanizados, com tendências do dia, focados em Polymarket
 TWEETS = [
-    "🏆 Liverpool x Real Madrid em alta odds no Polymarket! Oportunidade de arbitragem detectada. Mercado está buscando equilíbrio. @Polymarket #Sports #Arbitrage",
-    "💰 Bitcoin acumula ganhos expressivos! Mercado identifica consolidação de força em suportes. Profissionalizar posições agora é crítico. @Polymarket #Bitcoin #Crypto",
-    "⚡ Ethereum em movimento! Nível de resistência 2.500 está sendo testado com volume crescente. Oportunidade em aberto para traders preparados. @Polymarket #Ethereum #DeFi",
-    "🎯 Campeonato Brasileiro: padrão repetido em alguns times! Análise do Polymarket aponta mercado ineficiente. Traders atentos ganham com isso. @Polymarket #Sports #Trading",
-    "🔥 Solana em recuperação! Rede mantém fluxos transacionais crescentes. Fundos institucionais voltam a posicionar. Oportunidade de longo prazo em formação. @Polymarket #SOL #Web3",
-    "⚽ Copa Libertadores: mercado ainda repricia lances polêmicos! Decisões divergentes entre casas de apostas. Bom momento para quem analisa deep. @Polymarket #Sports #Libertadores",
-    "🪙 XRP recupera volume após movimentação institucional. Padrões gráficos indicam acumulação. Mercado preparando próxima perna de alta. @Polymarket #XRP #Crypto",
-    "📈 Basquete NBA: times de elite saem da comfort zone! Polymarket detecta repricing de mercado. Analistas que veem além do mainstream lucram. @Polymarket #NBA #Sports",
-    "💎 DeFi tokens consolidam suportes após corretivo! TVL em crescimento. Oportunidade para quem entende o ciclo de mercado. @Polymarket #DeFi #Opportunity",
-    "🚀 Cardano rompe resistências históricas! Atividade em rede bate recordes. Mercado de previsão premia quem viu isso vindo. @Polymarket #ADA #Crypto",
-    "⛳ Masters Golf: mercado prega favoritos! Polymarket identifica gaps de repricing. Traders de props estão lucrando bem. @Polymarket #Golf #Sports #Props",
-    "🔐 Bitcoin Lightning Network expande explosivamente! Transações diárias crescem 300%. Estrutura de rede muda o jogo. Mercado ainda não precificou tudo. @Polymarket #Bitcoin #Layer2"
+    "🚨 VAI ROLAR HOJE: Liverpool vs Real Madrid é TRETA na Polymarket. Pessoal tá apostando pesado em um gol antes dos 30min. Vocês acreditam? @Polymarket #UCL",
+    "💰 PAUSA! Bitcoin tá fazendo aquele movimento CLÁSSICO de consolidação... Quem tá olhando as odds na Polymarket sabe que a próxima perna VEM BOMBADA. @Polymarket #BTC",
+    "⚡ ATENÇÃO: Ethereum testando 2.500 AGORA. Polymarket mostrando volume INSANO nos últimos 30min. Será que sai daqui? 👀 @Polymarket #ETH #DeFi",
+    "🔥 BOMBAAAA: Brasileirão tá LOUCO hoje! Times que ninguém apostava tão ganhando. Polymarket tá repricitficando em TEMPO REAL. Quem tá ganhando aí? @Polymarket #Brasileirão",
+    "🎯 GALERA: Solana VIROU a madrugada se recuperando. Fundos grandes voltaram a comprar. Polymarket detectou o movimento ANTES de acontecer. TALENTO ou SORTE? @Polymarket #SOL",
+    "⚽ CALORÃO: Copa Libertadores tá POLÊMICA! Decisão do árbitro rendeu DÚZIAS de trades diferentes na Polymarket. Isso é OURO puro pra quem tá vendo. @Polymarket #Libertadores",
+    "📈 URGENTE: XRP subiu 12% enquanto NINGUÉM tava olhando. Polymarket tá EXIBINDO que isso era previsível. Ficou pra trás? Acontece... @Polymarket #XRP #Crypto",
+    "🏀 NBA TENSÃO: Lakers vs Celtics AGORA. Odds na Polymarket mudaram 5 VEZES só na pré-temporada. Mercado PENSA DEMAIS? @Polymarket #NBA #Sports",
+    "💎 DEFI DETONANDO: TVL subiu ABSURDO. Polymarket identificou padrão ANTES dos normies. Isso é análise técnica ou MAGIA? @Polymarket #DeFi #Web3",
+    "🚀 CARDANO EXPLOOOUU: Resistência de 2 ANOS rompida. Polymarket tá CHOVENDO dinheiro pra quem viu vindo. Saudade de estar lá? @Polymarket #ADA",
+    "⛳ MASTERS GOLF HOJE: Favoritismo MORREU. Polymarket detectou anomalia nas odds. Traders de Props tão RINDO pra BANCO. @Polymarket #Golf #Sports",
+    "🔐 BITCOIN LAYER2 EXPLODIU: Lightning Network processando MILHÕES. Estrutura de rede MUDOU PERM. Polymarket AINDA não precificou tudo isso. @Polymarket #Bitcoin",
+    "🎪 CRYPTO MOMENT: Meme coin SUBIU mais que Bitcoin. Polymarket tá tipo 'isso faz sentido?' Caos organizado? SIM! @Polymarket #Crypto #Memes",
+    "🏆 SPORTS MALUCURA: Time que MORREU na temporada tá REVIVENDO. Polymarket PULOU antes de todo mundo. Estratégia ou SORTE? @Polymarket #Sports",
+    "⚙️ DeFi MOMENTO: Smart contracts RODANDO 24/7. TVL em crescimento EXPONENCIAL. Polymarket tá pronto pra próxima EXPLOSÃO? @Polymarket #DeFi"
 ]
 
 @app.get("/")
