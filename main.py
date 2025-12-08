@@ -37,7 +37,7 @@ TWEETS = [
     "🔴 CRYPTO CAINDO: Polymarket tá MOVIMENTADO\n📊 Shorts ganham na próxima 1h\n💎 Posição garantida?",
     "🏆 COPA AMÉRICA 2024: Odd 2.5 Argentina CAMPEÃ na Polymarket\n🇦🇷 Tá caro? Tá barato? DECIDE!",
     "🚀 ETHEREUM +5% EM 10MIN na Polymarket\n👀 Traders liquidados\n💥 Próximo pico = quando?",
-    "⚡ URGÊNCIA: NBAFinalsGame7 em 30min na Polymarket\n🏀 Celtics ou Heat? Vocês acreditam?",
+    "⚡ URGÊNCIA: NBA Finals Game 7 em 30min na Polymarket\n🏀 Celtics ou Heat? Vocês acreditam?",
     "💰 DOGE PUMP DE 15% em Polymarket agora\n🐕 Seguindo Elon? Vai cair? FALA AÊEE!"
 ]
 
@@ -122,4 +122,4 @@ if __name__ == '__main__':
     # Rodar Flask server na porta do Cloud Run
     port = int(os.getenv('PORT', 8080))
     logger.info(f"📡 Flask iniciando na porta {port}...")
-    app.run(host='0.0.0.0', port=port, threaded=True, debug=False)
+    app.run(host='0.0.0.0', port=port, threaded=True, debug=False, use_reloader=False)
