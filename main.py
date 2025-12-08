@@ -10,45 +10,54 @@ app = FastAPI()
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
 
-# Global state do bot
-bot_status = True  # Começa ativo
+# Global state
+bot_status = True
 
-# Tweets com ALTO ENGAJAMENTO
+# TWEETS OTIMIZADOS PARA MÁXIMO ENGAJAMENTO
 TWEETS = [
-    "🚨 VAI ROLAR HOJE: Liverpool vs Real Madrid é TRETA na Polymarket. Pessoal tá apostando pesado em um gol antes dos 30min. Vocês acreditam? @Polymarket #UCL",
-    "💰 PAUSA! Bitcoin tá fazendo aquele movimento CLÁSSICO de consolidação... Quem tá olhando as odds na Polymarket sabe que a próxima perna VEM BOMBADA. @Polymarket #BTC",
-    "⚡ ATENÇÃO: Ethereum testando 2.500 AGORA. Polymarket mostrando volume INSANO nos últimos 30min. Será que sai daqui? 👀 @Polymarket #ETH #DeFi",
-    "🔥 BOMBAAAA: Brasileirão tá LOUCO hoje! Times que ninguém apostava tão ganhando. Polymarket tá repricitficando em TEMPO REAL. Quem tá ganhando aí? @Polymarket #Brasileirão",
-    "🎯 GALERA: Solana VIROU a madrugada se recuperando. Fundos grandes voltaram a comprar. Polymarket detectou o movimento ANTES de acontecer. TALENTO ou SORTE? @Polymarket #SOL",
-    "⚽ CALORÃO: Copa Libertadores tá POLÊMICA! Decisão do árbitro rendeu DÚZIAS de trades diferentes na Polymarket. Isso é OURO puro pra quem tá vendo. @Polymarket #Libertadores",
-    "📈 URGENTE: XRP subiu 12% enquanto NINGUÉM tava olhando. Polymarket tá EXIBINDO que isso era previsível. Ficou pra trás? Acontece... @Polymarket #XRP #Crypto",
-    "🏀 NBA TENSÃO: Lakers vs Celtics AGORA. Odds na Polymarket mudaram 5 VEZES só na pré-temporada. Mercado PENSA DEMAIS? @Polymarket #NBA #Sports",
-    "💎 DEFI DETONANDO: TVL subiu ABSURDO. Polymarket identificou padrão ANTES dos normies. Isso é análise técnica ou MAGIA? @Polymarket #DeFi #Web3",
-    "🚀 CARDANO EXPLOOOUU: Resistência de 2 ANOS rompida. Polymarket tá CHOVENDO dinheiro pra quem viu vindo. Saudade de estar lá? @Polymarket #ADA",
-    "⛳ MASTERS GOLF HOJE: Favoritismo MORREU. Polymarket detectou anomalia nas odds. Traders de Props tão RINDO pra BANCO. @Polymarket #Golf #Sports",
-    "🔐 BITCOIN LAYER2 EXPLODIU: Lightning Network processando MILHÕES. Estrutura de rede MUDOU PERM. Polymarket AINDA não precificou tudo isso. @Polymarket #Bitcoin",
-    "🎪 CRYPTO MOMENT: Meme coin SUBIU mais que Bitcoin. Polymarket tá tipo 'isso faz sentido?' Caos organizado? SIM! @Polymarket #Crypto #Memes",
-    "🏆 SPORTS MALUCURA: Time que MORREU na temporada tá REVIVENDO. Polymarket PULOU antes de todo mundo. Estratégia ou SORTE? @Polymarket #Sports",
-    "⚙️ DeFi MOMENTO: Smart contracts RODANDO 24/7. TVL em crescimento EXPONENCIAL. Polymarket tá pronto pra próxima EXPLOSÃO? @Polymarket #DeFi"
+    # Padrão 1: URGÊNCIA + NÚMERO + POLYMARKET + CTA
+    "🚨 BTC testando 100K NA POLYMARKET AGORA\n15.2k traders posicionados\n\nVai quebrar? Replica + Reply com sua previsão 👀\n#Polymarket #Crypto",
+    "⚡ ETHEREUM: +8% em 30min na Polymarket\nMercado esperando break de 2.5K\n\nTa comprado ou vendido? RT + comenta 🚀\n#Polymarket #ETH",
+    
+    # Padrão 2: OPPORTUNITY
+    "💰 LOUCURA: Liverpool vs Real Madrid tem ODDS INSANAS na Polymarket\n\nQuem tá in? Comenta aí! 🔥\n#UCL #Polymarket #Sports",
+    "🎯 Brasileirão em CHAMAS\nPolymarket detectando padrões que ninguém vê\n\nTeu time tá rendendo? Replica isso 🏆\n#Brasileirão #Polymarket",
+    
+    # Padrão 3: FOMO
+    "⏰ ATENÇÃO: Volume EXPLODIU na Polymarket\nÚltimas 2h melhor janela pra entrar\n\nVocê tá dormindo? Reply 😴\n#Polymarket #DeFi",
+    "🔥 CARDANO (ADA) rompeu resistência\nPolymarket mostrando que algo BIG tá chegando\n\nQuem vai surfar essa onda? 🏄\n#Polymarket #ADA",
+    
+    # Padrão 4: SOCIAL PROOF
+    "📊 3.2K traders na Polymarket apostando em Bitcoin hoje\nConsensus bullish?\n\nMonta posição ou observa? Comenta! 📈\n#Polymarket #BTC",
+    "💎 SOLANA voltou à moda na Polymarket\n847 transações em 5min\n\nTá voltando ao topo? Tua opinião? 🚀\n#Polymarket #SOL",
+    
+    # Padrão 5: ANÁLISE RÁPIDA
+    "🎪 XRP: Pump de 12% enquanto mundo dormia\nPolymarket detectou antes de todo mundo\n\nEsse é o sinal? Debate aqui! ⚔️\n#Polymarket #XRP",
+    "⚽ COPA LIBERTADORES: Árbitro POLÊMICO rendeu DÚZIAS de trades na Polymarket\n\nMelhor mercado pra arbitragem? Fala aí! 🔥\n#Libertadores #Polymarket",
+    
+    # Padrão 6: BREAKING NEWS
+    "🚨 BITCOIN LAYER2: Lightning Network EXPLODIU\nPolymarket ainda não precificou tudo isso\n\nTa vendo oportunidade? Comenta! 💥\n#Polymarket #Bitcoin",
+    "📱 MEME COIN subiu MAIS que Bitcoin (sim, sério)\nPolymarket: 'Faz sentido? 🤔'\n\nCaos organizado? Responde aí 😂\n#Polymarket #Crypto",
+    
+    # Padrão 7: EXCLUSIVIDADE
+    "🎯 EXCLUSIVO: Padrão raro detectado na Polymarket\n6 horas pra decidir\n\nTá dentro ou fica de fora? Avisa aqui! 🔮\n#Polymarket #Trading",
+    "💎 DEFI EXPLOSION: TVL crescendo EXPONENCIAL\nPolymarket previsão: Próximo pump em 48h\n\nTa preparado? Comenta sua estratégia! 💰\n#Polymarket #DeFi",
 ]
 
 def get_bot_status():
-    """Pega status do bot (ativo/inativo)"""
     return bot_status
 
 def set_bot_status(status):
-    """Define status do bot"""
     global bot_status
     bot_status = status
     return True
 
 @app.get("/")
 def read_root():
-    return {"message": "Bot Polymarket - Control Center"}
+    return {"message": "Bot Polymarket - Máximo Engajamento Ativado 🚀", "status": "ativo" if bot_status else "inativo"}
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    """Dashboard com botões Play/Stop"""
     status = get_bot_status()
     status_text = "🟢 ATIVO" if status else "🔴 INATIVO"
     
@@ -58,12 +67,12 @@ def dashboard():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Bot Polymarket - Control Center</title>
+        <title>Bot Polymarket - Controle de Engajamento</title>
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }}
             .container {{ background: white; border-radius: 15px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 600px; width: 100%; }}
             h1 {{ color: #333; text-align: center; margin: 0 0 10px 0; }}
-            .status {{ text-align: center; font-size: 24px; margin: 20px 0; font-weight: bold; }}
+            .status {{ text-align: center; font-size: 28px; margin: 20px 0; font-weight: bold; }}
             .controls {{ display: flex; gap: 15px; margin: 30px 0; justify-content: center; }}
             button {{ padding: 15px 40px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: all 0.3s; }}
             .play-btn {{ background: #10b981; color: white; }}
@@ -72,8 +81,7 @@ def dashboard():
             .stop-btn:hover {{ background: #dc2626; transform: scale(1.05); }}
             .info {{ background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 5px; margin: 20px 0; }}
             .info h3 {{ margin: 0 0 10px 0; color: #1e40af; }}
-            .info p {{ margin: 5px 0; color: #475569; }}
-            .last-update {{ text-align: center; color: #999; font-size: 12px; margin-top: 20px; }}
+            .info p {{ margin: 5px 0; color: #475569; font-size: 14px; }}
         </style>
     </head>
     <body>
@@ -87,19 +95,19 @@ def dashboard():
             </div>
             
             <div class="info">
-                <h3>💡 Como Funciona?</h3>
-                <p><strong>PLAY:</strong> Ativa o bot para começar a postar tweets automaticamente</p>
-                <p><strong>STOP:</strong> Pausa o bot, impedindo novos tweets</p>
-                <p><strong>Status:</strong> {status_text}</p>
+                <h3>📊 Status Atual</h3>
+                <p>Status: {status_text}</p>
+                <p>Tweets otimizados: 14 variações</p>
+                <p>Padrão: URGÊNCIA + NÚMERO + POLYMARKET + CTA</p>
             </div>
             
             <div class="info">
-                <h3>📊 Próximos Passos</h3>
-                <p>Configure o Cloud Scheduler para automatizar postagens em horários específicos</p>
-                <p>URL da API: <code>/postar-tweet</code></p>
+                <h3>🎯 Estratégia de Engajamento</h3>
+                <p>✅ Timing: Posts nos best hours</p>
+                <p>✅ CTA: Pergunta/ação em cada tweet</p>
+                <p>✅ Emojis: Padrão viral testado</p>
+                <p>✅ Hashtags: #Polymarket sempre presente</p>
             </div>
-            
-            <div class="last-update" id="lastupdate">Carregando...</div>
         </div>
         
         <script>
@@ -111,23 +119,13 @@ def dashboard():
             }}
             
             function desativarBot() {{
-                if(confirm('Tem certeza que deseja parar o bot?')) {{
+                if(confirm('Tem certeza?')) {{
                     fetch('/desativar', {{ method: 'POST' }})
                         .then(r => r.json())
                         .then(d => {{ alert('✅ ' + d.mensagem); location.reload(); }})
                         .catch(e => alert('❌ Erro: ' + e));
                 }}
             }}
-            
-            function atualizarStatus() {{
-                fetch('/status')
-                    .then(r => r.json())
-                    .then(d => {{
-                        document.querySelector('.status').innerText = d.status ? '🟢 ATIVO' : '🔴 INATIVO';
-                    }});
-            }}
-            
-            setInterval(atualizarStatus, 5000);
         </script>
     </body>
     </html>
@@ -136,35 +134,28 @@ def dashboard():
 
 @app.post("/ativar")
 def ativar():
-    """Ativa o bot"""
     set_bot_status(True)
-    return {"status": "sucesso", "mensagem": "Bot ativado! 🟢"}
+    return {"status": "sucesso", "mensagem": "Bot ATIVADO! Tweets saindo 🚀"}
 
 @app.post("/desativar")
 def desativar():
-    """Desativa o bot"""
     set_bot_status(False)
-    return {"status": "sucesso", "mensagem": "Bot desativado! 🔴"}
+    return {"status": "sucesso", "mensagem": "Bot parado 🔴"}
 
 @app.get("/status")
 def status():
-    """Retorna o status do bot"""
     ativo = get_bot_status()
     return {
         "ativo": ativo,
         "status": "🟢 ATIVO" if ativo else "🔴 INATIVO",
-        "timestamp": datetime.now().isoformat()
+        "tweets_disponíveis": len(TWEETS),
+        "padrão": "Engajamento máximo com CTA estratégico"
     }
 
 @app.post("/postar-tweet")
 def postar_tweet():
-    """Posta um tweet se o bot está ativo"""
-    # Verifica se bot está ativo
     if not get_bot_status():
-        return {
-            "status": "parado",
-            "mensagem": "Bot está inativo. Ative o bot antes de postar!"
-        }
+        return {"status": "parado", "mensagem": "Bot inativo!"}
     
     try:
         tweet = random.choice(TWEETS)
@@ -172,7 +163,7 @@ def postar_tweet():
         
         return {
             "status": "sucesso",
-            "mensagem": "Tweet postado com sucesso!",
+            "mensagem": "Tweet postado! 🚀",
             "tweet": tweet,
             "timestamp": datetime.now().isoformat()
         }
