@@ -1,12 +1,33 @@
 import os
+import sys
+import logging
 import random
+import threading
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import tweepy
+from flask import Flask, jsonify
 
-# Configurações
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Validar variáveis de ambiente ANTES de usar
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-client = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
+if not TWITTER_BEARER_TOKEN:
+    logger.error("❌ ERRO CRÍTICO: TWITTER_BEARER_TOKEN não definida!")
+    logger.error("Configure a variável de ambiente no Cloud Run.")
+    sys.exit(1)
+
+try:
+    client = tweepy.Client(bearer_token=TWITTER_BEARER_TOKEN)
+    logger.info("✅ Tweepy client inicializado com sucesso")
+except Exception as e:
+    logger.error(f"❌ Erro ao inicializar Tweepy: {e}")
+    sys.exit(1)
 
 # TWEETS SOBRE POLYMARKET - ESPORTES E CRIPTO
 TWEETS = [
@@ -24,32 +45,81 @@ def post_tweet():
     """Publica um tweet aleatório a cada execução"""
     try:
         tweet_text = random.choice(TWEETS)
-        client.create_tweet(text=tweet_text)
-        print(f"✅ Tweet postado: {tweet_text[:50]}...")
+        response = client.create_tweet(text=tweet_text)
+        logger.info(f"✅ Tweet postado com sucesso: {tweet_text[:50]}...")
+        logger.info(f"   Tweet ID: {response.data['id']}")
+        return True
+    except tweepy.Forbidden as e:
+        logger.error(f"❌ ACESSO NEGADO ao X/Twitter: {e}")
+        logger.error(f"   Verifique o TWITTER_BEARER_TOKEN e permissões da app.")
+        return False
+    except tweepy.TweepyException as e:
+        logger.error(f"❌ Erro Tweepy: {e}")
+        return False
     except Exception as e:
-        print(f"❌ Erro ao postar: {e}")
+        logger.error(f"❌ Erro inesperado ao postar: {type(e).__name__}: {e}")
+        return False
 
-# Scheduler para postar tweets 3x por dia
-scheduler = BackgroundScheduler()
-scheduler.add_job(post_tweet, 'interval', hours=8)  # A cada 8 horas = 3x por dia
-scheduler.start()
+# Variável para monitorar scheduler
+scheduler = None
 
-# API Health Check
-from flask import Flask
+def start_scheduler():
+    """Inicia o scheduler em thread separada"""
+    global scheduler
+    try:
+        scheduler = BackgroundScheduler(daemon=True)
+        scheduler.add_job(post_tweet, 'interval', hours=8, id='tweet_job')
+        scheduler.start()
+        logger.info("✅ Scheduler iniciado - tweets a cada 8 horas (3x por dia)")
+    except Exception as e:
+        logger.error(f"❌ Erro ao iniciar scheduler: {e}")
+        raise
+
+# Flask app para Cloud Run health checks
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def health():
-    return {
+    """Health check endpoint para Cloud Run"""
+    return jsonify({
         "status": "✅ Bot rodando!",
-        "tweets_posted": "3x ao dia",
+        "version": "2.0",
+        "tweets_posted_per_day": "3x",
         "topics": ["Esportes", "Criptomoedas", "Polymarket"],
+        "scheduler_active": scheduler is not None and scheduler.running,
         "timestamp": datetime.now().isoformat()
-    }
+    }), 200
 
 @app.route('/ping', methods=['GET'])
 def ping():
-    return {"pong": True}
+    """Ping endpoint"""
+    return jsonify({"pong": True, "timestamp": datetime.now().isoformat()}), 200
+
+@app.route('/status', methods=['GET'])
+def status():
+    """Status detalhado do bot"""
+    return jsonify({
+        "bot_status": "running",
+        "scheduler": {
+            "active": scheduler is not None,
+            "running": scheduler.running if scheduler else False,
+            "jobs": len(scheduler.get_jobs()) if scheduler else 0
+        },
+        "twitter_token_configured": bool(TWITTER_BEARER_TOKEN),
+        "timestamp": datetime.now().isoformat()
+    }), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    logger.info("🚀 Iniciando Bot Polymarket Twitter...")
+    
+    # Iniciar scheduler
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.error(f"Erro crítico ao iniciar scheduler: {e}")
+        sys.exit(1)
+    
+    # Rodar Flask server na porta do Cloud Run
+    port = int(os.getenv('PORT', 8080))
+    logger.info(f"📡 Flask iniciando na porta {port}...")
+    app.run(host='0.0.0.0', port=port, threaded=True, debug=False)
