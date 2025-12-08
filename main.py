@@ -4,23 +4,14 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from tweepy import Client, TweepError
-import firebase_admin
-from firebase_admin import credentials, db
-
-# Inicializar Firebase
-try:
-    firebase_admin.get_app()
-except ValueError:
-    # Se não existe app Firebase, usar variável de ambiente
-    db_url = os.getenv("FIREBASE_DB_URL")
-    if db_url:
-        cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_JSON"))
-        firebase_admin.initialize_app(cred, {'databaseURL': db_url})
 
 app = FastAPI()
 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 twitter_client = Client(bearer_token=TWITTER_BEARER_TOKEN, wait_on_rate_limit=True)
+
+# Global state do bot
+bot_status = True  # Começa ativo
 
 # Tweets com ALTO ENGAJAMENTO
 TWEETS = [
@@ -42,24 +33,14 @@ TWEETS = [
 ]
 
 def get_bot_status():
-    """Pega status do bot (ativo/inativo) do Firestore"""
-    try:
-        ref = db.reference('bot_polymarket')
-        data = ref.get()
-        if data and 'ativo' in data:
-            return data['ativo']
-        return True  # padrão é ativo
-    except:
-        return True  # se não conseguir acessar, retorna ativo
+    """Pega status do bot (ativo/inativo)"""
+    return bot_status
 
 def set_bot_status(status):
-    """Define status do bot no Firestore"""
-    try:
-        ref = db.reference('bot_polymarket')
-        ref.update({'ativo': status, 'ultima_alteracao': datetime.now().isoformat()})
-        return True
-    except:
-        return False
+    """Define status do bot"""
+    global bot_status
+    bot_status = status
+    return True
 
 @app.get("/")
 def read_root():
@@ -120,7 +101,7 @@ def dashboard():
             
             <div class="last-update" id="lastupdate">Carregando...</div>
         </div>
-
+        
         <script>
             function ativarBot() {{
                 fetch('/ativar', {{ method: 'POST' }})
@@ -156,16 +137,14 @@ def dashboard():
 @app.post("/ativar")
 def ativar():
     """Ativa o bot"""
-    if set_bot_status(True):
-        return {"status": "sucesso", "mensagem": "Bot ativado! 🟢"}
-    return {"status": "erro", "mensagem": "Erro ao ativar bot"}
+    set_bot_status(True)
+    return {"status": "sucesso", "mensagem": "Bot ativado! 🟢"}
 
 @app.post("/desativar")
 def desativar():
     """Desativa o bot"""
-    if set_bot_status(False):
-        return {"status": "sucesso", "mensagem": "Bot desativado! 🔴"}
-    return {"status": "erro", "mensagem": "Erro ao desativar bot"}
+    set_bot_status(False)
+    return {"status": "sucesso", "mensagem": "Bot desativado! 🔴"}
 
 @app.get("/status")
 def status():
