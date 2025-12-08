@@ -1,0 +1,1 @@
+TRIGGER: Redeploy após fix do Flask use_reloader=False
